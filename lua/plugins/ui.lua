@@ -32,13 +32,7 @@ return {
     },
   },
 
-  -- 4. SMEAR CURSOR
-  {
-    "sphamba/smear-cursor.nvim",
-    opts = {},
-  },
-
-  -- 5. THE DASHBOARD
+  -- 4.THE DASHBOARD
   {
     "folke/snacks.nvim",
     priority = 1000,
