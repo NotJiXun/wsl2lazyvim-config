@@ -1,0 +1,2 @@
+-- Toggle Transparency (Native Windows Version)
+vim.keymap.set("n", "<leader>ut", "<cmd>TransparentToggle<cr>", { desc = "Toggle Transparency" })
