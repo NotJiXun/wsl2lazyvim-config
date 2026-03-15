@@ -28,11 +28,11 @@ return {
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "tokyonight-night",
+      colorscheme = "gruvbox",
     },
   },
 
-  -- 4.THE DASHBOARD
+  -- 4. THE DASHBOARD
   {
     "folke/snacks.nvim",
     priority = 1000,
@@ -47,6 +47,25 @@ return {
           { section = "startup", align = "left" },
         },
       },
+    },
+  },
+
+  -- 5. Crazy ASF smear cursor(fire hazard)
+  {
+    "sphamba/smear-cursor.nvim",
+    cond = function()
+      return vim.g.neovide == nil
+    end,
+    opts = {
+      cursor_color = "#ff4000", -- Bright fire orange
+      particles_enabled = true, -- Enables the sparks/fire effect
+      particle_spread = 1, -- How much the fire spreads out
+      stiffness = 0.5, -- Lower = more elastic/wild movement
+      trailing_stiffness = 0.2, -- Makes the tail linger longer
+      trailing_exponent = 5, -- Shapes the fire trail
+      damping = 0.6, -- More "bouncy" fire
+      gamma = 1, -- Intense color brightness
+      hide_target_hack = true, -- Hides the real cursor so it's just fire
     },
   },
 }
