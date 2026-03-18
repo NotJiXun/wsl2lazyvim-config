@@ -9,43 +9,67 @@ local sharp_logo = [[
                                                      ]]
 
 return {
-  -- 1. THE TRANSPARENCY ENGINE (The Toggle)
+  -- 1. KANAGAWA (With Compiled Overrides)
   {
-    "xiyaowong/transparent.nvim",
-    lazy = false,
-    opts = {
-      extra_groups = {
-        "NormalFloat",
-        "NvimTreeNormal",
-        "NeoTreeNormal",
-        "NeoTreeNormalNC",
-        "Terminal",
-        "Pmenu",
-        "FloatBorder",
-      },
-    },
-  },
-
-  -- 2. TOKYONIGHT (The "Moon" Variant)
-  {
-    "folke/tokyonight.nvim",
+    "rebelot/kanagawa.nvim",
     lazy = false,
     priority = 1000,
     opts = {
-      style = "moon", -- The deep blue "Moon" look
-      transparent = true, -- Native transparency support
-      styles = {
-        sidebars = "transparent",
-        floats = "transparent",
-      },
+      compile = true, -- REMEMBER: Run :KanagawaCompile after saving!
+      undercurl = true,
+      transparent = false,
+      theme = "wave",
+      overrides = function(colors)
+        local theme = colors.theme
+        return {
+          -- Kill the "Highlight Square" by making backgrounds match the editor
+          NormalFloat = { bg = "none" },
+          FloatBorder = { bg = "none", fg = theme.ui.float_border },
+          FloatTitle = { bg = "none" },
+
+          -- Specifically nuke Noice's boxy highlights
+          NoiceCmdlinePopup = { bg = "none" },
+          NoiceCmdlinePopupBorder = { bg = "none", fg = theme.ui.float_border },
+
+          -- Ensure completion menu is also clean
+          Pmenu = { fg = theme.ui.shade0, bg = theme.ui.bg_p1 },
+          PmenuSel = { fg = "none", bg = theme.ui.bg_p2 },
+        }
+      end,
     },
     config = function(_, opts)
-      require("tokyonight").setup(opts)
-      vim.cmd([[colorscheme tokyonight-moon]])
+      require("kanagawa").setup(opts)
+      vim.cmd("colorscheme kanagawa")
     end,
   },
 
-  -- 3. THE DASHBOARD (Snacks.nvim)
+  -- 2. NOICE (Restored to the "Nice" Floating Look)
+  {
+    "folke/noice.nvim",
+    opts = {
+      cmdline = {
+        view = "cmdline_popup", -- Back to the floating bar you like
+      },
+      views = {
+        cmdline_popup = {
+          border = {
+            style = "rounded",
+            padding = { 0, 1 },
+          },
+          win_options = {
+            -- Links Noice highlights to our new clean Kanagawa overrides
+            winhighlight = { Normal = "NormalFloat", FloatBorder = "FloatBorder" },
+          },
+        },
+      },
+    },
+  },
+
+  -- 3. ADDITIONAL THEMES
+  { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
+  { "folke/tokyonight.nvim", priority = 1000, opts = { style = "moon" } },
+
+  -- 4. THE DASHBOARD (Snacks.nvim)
   {
     "folke/snacks.nvim",
     priority = 1000,
