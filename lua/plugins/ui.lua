@@ -56,28 +56,42 @@ return {
       require("kanagawa").setup(opts)
       vim.cmd("colorscheme kanagawa")
       vim.cmd("KanagawaCompile")
-      vim.api.nvim_create_autocmd("VimEnter", {
+
+      -- Function to apply overrides
+      local function apply_overrides()
+        local colors = require("kanagawa.colors").setup()
+        local theme = colors.theme
+        vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
+        vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none", fg = theme.ui.float_border })
+        vim.api.nvim_set_hl(0, "FloatTitle", { bg = "none" })
+        vim.api.nvim_set_hl(0, "NoiceCmdlinePopup", { bg = "none" })
+        vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { bg = "none" })
+        vim.api.nvim_set_hl(0, "Pmenu", { fg = theme.ui.shade0, bg = "none" })
+        vim.api.nvim_set_hl(0, "PmenuSel", { fg = "none", bg = theme.ui.bg_p2 })
+        vim.api.nvim_set_hl(0, "TelescopeTitle", { fg = theme.ui.special, bold = true })
+        vim.api.nvim_set_hl(0, "TelescopePromptNormal", { bg = "none" })
+        vim.api.nvim_set_hl(0, "TelescopePromptBorder", { fg = theme.ui.float_border, bg = "none" })
+        vim.api.nvim_set_hl(0, "TelescopeResultsNormal", { fg = theme.ui.fg_dim, bg = "none" })
+        vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { fg = theme.ui.float_border, bg = "none" })
+        vim.api.nvim_set_hl(0, "TelescopePreviewNormal", { bg = "none" })
+        vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { fg = theme.ui.float_border, bg = "none" })
+        vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = "none" })
+        vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = "none" })
+      end
+
+      -- Apply immediately
+      apply_overrides()
+
+      -- Reapply on colorscheme change
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        pattern = "kanagawa",
+        callback = apply_overrides,
+      })
+
+      -- Apply after UI is fully loaded (for stubborn elements)
+      vim.api.nvim_create_autocmd("UIEnter", {
         callback = function()
-          vim.defer_fn(function()
-            local colors = require("kanagawa.colors").setup()
-            local theme = colors.theme
-            vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
-            vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none", fg = theme.ui.float_border })
-            vim.api.nvim_set_hl(0, "FloatTitle", { bg = "none" })
-            vim.api.nvim_set_hl(0, "NoiceCmdlinePopup", { bg = "none" })
-            vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { bg = "none" })
-            vim.api.nvim_set_hl(0, "Pmenu", { fg = theme.ui.shade0, bg = "none" })
-            vim.api.nvim_set_hl(0, "PmenuSel", { fg = "none", bg = theme.ui.bg_p2 })
-            vim.api.nvim_set_hl(0, "TelescopeTitle", { fg = theme.ui.special, bold = true })
-            vim.api.nvim_set_hl(0, "TelescopePromptNormal", { bg = "none" })
-            vim.api.nvim_set_hl(0, "TelescopePromptBorder", { fg = theme.ui.float_border, bg = "none" })
-            vim.api.nvim_set_hl(0, "TelescopeResultsNormal", { fg = theme.ui.fg_dim, bg = "none" })
-            vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { fg = theme.ui.float_border, bg = "none" })
-            vim.api.nvim_set_hl(0, "TelescopePreviewNormal", { bg = "none" })
-            vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { fg = theme.ui.float_border, bg = "none" })
-            vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = "none" })
-            vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = "none" })
-          end, 50)
+          vim.defer_fn(apply_overrides, 100)
         end,
       })
     end,
