@@ -10,7 +10,9 @@ vim.opt.softtabstop = 4
 
 -- Neovide configuration
 if vim.g.neovide then
-  -- Font set to h11
+  -- Font set to h1
+  -- vim.o.guifont = "CaskaydiaCove NF:h11"
+
   vim.o.guifont = "JetBrainsMono NF:h11"
 
   -- Modern Transparency (80% opacity)
@@ -20,3 +22,6 @@ if vim.g.neovide then
   -- Leave cursor settings at their defaults (no vfx_mode or animation overrides)
   vim.g.neovide_confirm_quit = true
 end
+
+-- Fix for Monokai Pro Classic startup
+vim.g.lazyvim_colorscheme = "monokai-pro-classic"
