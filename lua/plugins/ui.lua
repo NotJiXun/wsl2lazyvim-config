@@ -1,34 +1,71 @@
 local sharp_logo = [[
-=================     ===============     ===============   ========  ========
-\\ . . . . . . .\\   //. . . . . . .\\   //. . . . . . .\\  \\. . .\\// . . //
-||. . ._____. . .|| ||. . ._____. . .|| ||. . ._____. . .|| || . . .\/ . . .||
-|| . .||   ||. . || || . .||   ||. . || || . .||   ||. . || ||. . . . . . . ||
-||. . ||   || . .|| ||. . ||   || . .|| ||. . ||   || . .|| || . | . . . . .||
-|| . .||   ||. _-|| ||-_ .||   ||. . || || . .||   ||. _-|| ||-_.|\ . . . . ||
-||. . ||   ||-'  || ||  `-||   || . .|| ||. . ||   ||-'  || ||  `|\_ . .|. .||
-|| . _||   ||    || ||    ||   ||_ . || || . _||   ||    || ||   |\ `-_/| . ||
-||_-' ||  .|/    || ||    \|.  || `-_|| ||_-' ||  .|/    || ||   | \  / |-_.||
-||    ||_-'      || ||      `-_||    || ||    ||_-'      || ||   | \  / |  `||
-||    `'         || ||         `'    || ||    `'         || ||   | \  / |   ||
-||            .===' `===.         .==='.`===.         .===' /==. |  \/  |   ||
-||         .=='   \_|-_ `===. .==='   _|_   `===. .===' _-|/   `==  \/  |   ||
-||      .=='    _-'    `-_  `='    _-'   `-_    `='  _-'   `-_  /|  \/  |   ||
-||   .=='    _-'          '-__\._-'         '-_./__-'         `' |. /|  |   ||
-||.=='    _-'                                                     `' |  /==.||
-=='    _-'                        N E O V I M                         \/   `==
-\   _-'                                                                `-_   /
- `''                                                                      ``' 
+                                                   
+                                              ___  
+                                           ,o88888 
+                                        ,o8888888' 
+                  ,:o:o:oooo.        ,8O88Pd8888"  
+              ,.::.::o:ooooOoOoO. ,oO8O8Pd888'"    
+            ,.:.::o:ooOoOoOO8O8OOo.8OOPd8O8O"      
+           , ..:.::o:ooOoOOOO8OOOOo.FdO8O8"        
+          , ..:.::o:ooOoOO8O888O8O,COCOO"          
+         , . ..:.::o:ooOoOOOO8OOOOCOCO"            
+          . ..:.::o:ooOoOoOO8O8OCCCC"o             
+             . ..:.::o:ooooOoCoCCC"o:o             
+             . ..:.::o:o:,cooooCo"oo:o:            
+          `   . . ..:.:cocoooo"'o:o:::'            
+          .`   . ..::ccccoc"'o:o:o:::'             
+         :.:.    ,c:cccc"':.:.:.:.:.'              
+       ..:.:"'`::::c:"'..:.:.:.:.:.'               
+     ...:.'.:.::::"'    . . . . .'                 
+    .. . ....:."' `   .  . . ''                    
+  . . . ...."'                                     
+  .. . ."'                                         
+ .                                                 
+                                                   
 ]]
 
-return {
-  -- 1. KANAGAWA (compiled + forced override after startup)
-  {
-    "rebelot/kanagawa.nvim",
-    lazy = false,
-    priority = 1000,
-    opts = {
+-- Transparency flag
+vim.g.transparency_enabled = false
+
+-- Theme list (order: 1=kanagawa, 2=nord, 3=catppuccin, 4=tokyonight)
+local themes = { "kanagawa", "nord", "catppuccin", "tokyonight" }
+
+-- State file path
+local state_file = vim.fn.stdpath("data") .. "/theme_state"
+
+-- Load saved index
+local function load_theme_index()
+  local file = io.open(state_file, "r")
+  if file then
+    local idx = tonumber(file:read("*a"))
+    file:close()
+    if idx and idx >= 1 and idx <= #themes then
+      return idx
+    end
+  end
+  return 2 -- default to kanagawa
+end
+
+-- Save current index
+local function save_theme_index(idx)
+  local file = io.open(state_file, "w")
+  if file then
+    file:write(idx)
+    file:close()
+  end
+end
+
+local current_theme_index = load_theme_index()
+
+-- Apply theme function
+local function apply_theme()
+  local theme = themes[current_theme_index]
+
+  -- Setup theme-specific options
+  if theme == "kanagawa" then
+    require("kanagawa").setup({
       compile = true,
-      transparent = false,
+      transparent = vim.g.transparency_enabled,
       theme = "wave",
       overrides = function(colors)
         local theme = colors.theme
@@ -51,53 +88,103 @@ return {
           NeoTreeNormalNC = { bg = "none" },
         }
       end,
-    },
-    config = function(_, opts)
-      require("kanagawa").setup(opts)
-      vim.cmd("colorscheme kanagawa")
-      vim.cmd("KanagawaCompile")
+    })
+  elseif theme == "nord" then
+    vim.g.nord_contrast = true
+    vim.g.nord_borders = false
+    vim.g.nord_disable_background = vim.g.transparency_enabled
+    vim.g.nord_italic = true
+    vim.g.nord_uniform_diff_background = true
+    vim.g.nord_bold = false
+  elseif theme == "catppuccin" then
+    require("catppuccin").setup({
+      flavour = "mocha",
+      transparent_background = vim.g.transparency_enabled,
+      integrations = {
+        treesitter = true,
+        noice = true,
+        telescope = true,
+        neotree = true,
+      },
+    })
+  elseif theme == "tokyonight" then
+    require("tokyonight").setup({
+      style = "moon", -- you wanted moon
+      transparent = vim.g.transparency_enabled,
+      styles = {
+        sidebars = "transparent",
+        floats = "transparent",
+      },
+    })
+  end
 
-      -- Function to apply overrides
-      local function apply_overrides()
-        local colors = require("kanagawa.colors").setup()
-        local theme = colors.theme
-        vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
-        vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none", fg = theme.ui.float_border })
-        vim.api.nvim_set_hl(0, "FloatTitle", { bg = "none" })
-        vim.api.nvim_set_hl(0, "NoiceCmdlinePopup", { bg = "none" })
-        vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { bg = "none" })
-        vim.api.nvim_set_hl(0, "Pmenu", { fg = theme.ui.shade0, bg = "none" })
-        vim.api.nvim_set_hl(0, "PmenuSel", { fg = "none", bg = theme.ui.bg_p2 })
-        vim.api.nvim_set_hl(0, "TelescopeTitle", { fg = theme.ui.special, bold = true })
-        vim.api.nvim_set_hl(0, "TelescopePromptNormal", { bg = "none" })
-        vim.api.nvim_set_hl(0, "TelescopePromptBorder", { fg = theme.ui.float_border, bg = "none" })
-        vim.api.nvim_set_hl(0, "TelescopeResultsNormal", { fg = theme.ui.fg_dim, bg = "none" })
-        vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { fg = theme.ui.float_border, bg = "none" })
-        vim.api.nvim_set_hl(0, "TelescopePreviewNormal", { bg = "none" })
-        vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { fg = theme.ui.float_border, bg = "none" })
-        vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = "none" })
-        vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = "none" })
-      end
+  -- Apply colorscheme
+  vim.cmd("colorscheme " .. theme)
 
-      -- Apply immediately
-      apply_overrides()
+  -- Post-setup
+  if theme == "kanagawa" then
+    vim.cmd("KanagawaCompile")
+  end
 
-      -- Reapply on colorscheme change
-      vim.api.nvim_create_autocmd("ColorScheme", {
-        pattern = "kanagawa",
-        callback = apply_overrides,
-      })
+  if vim.g.transparency_enabled then
+    vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
+  end
 
-      -- Apply after UI is fully loaded (for stubborn elements)
-      vim.api.nvim_create_autocmd("UIEnter", {
-        callback = function()
-          vim.defer_fn(apply_overrides, 100)
-        end,
-      })
-    end,
+  print("Theme: " .. theme .. (vim.g.transparency_enabled and " (transparent)" or ""))
+end
+
+-- Transparency toggle
+_G.toggle_transparency = function()
+  vim.g.transparency_enabled = not vim.g.transparency_enabled
+  apply_theme()
+end
+
+-- Theme cycle
+_G.cycle_theme = function()
+  current_theme_index = (current_theme_index % #themes) + 1
+  save_theme_index(current_theme_index)
+  apply_theme()
+end
+
+-- Delayed theme application (to override LazyVim's default)
+vim.api.nvim_create_autocmd("VimEnter", {
+  callback = function()
+    -- Wait a bit to ensure LazyVim has set its theme
+    vim.defer_fn(apply_theme, 100)
+  end,
+})
+
+return {
+  -- 1. KANAGAWA
+  {
+    "rebelot/kanagawa.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function() end,
   },
-
-  -- 2. NOICE (win_options removed)
+  -- 2. NORD
+  {
+    "shaunsingh/nord.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function() end,
+  },
+  -- 3. CATPPUCCIN
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    lazy = false,
+    priority = 1000,
+    config = function() end,
+  },
+  -- 4. TOKYONIGHT
+  {
+    "folke/tokyonight.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function() end,
+  },
+  -- 5. NOICE (unchanged)
   {
     "folke/noice.nvim",
     opts = function(_, opts)
@@ -112,21 +199,43 @@ return {
       return opts
     end,
   },
-
-  -- 3. DASHBOARD (only header, recent files, and startup – safe padding)
+  -- 6. DASHBOARD – Compact keys (gap=0)
   {
     "folke/snacks.nvim",
     priority = 1000,
-    opts = {
-      dashboard = {
+    opts = function(_, opts)
+      -- Merge with existing opts
+      opts.dashboard = vim.tbl_deep_extend("force", opts.dashboard or {}, {
         enabled = true,
         preset = { header = sharp_logo },
         sections = {
-          { section = "header", padding = 1 }, -- one line above and below header
-          { section = "recent_files", title = "Recent Files", limit = 3, padding = 0 }, -- no extra padding
-          { section = "startup", padding = 1 }, -- one line above startup
+          { section = "header", padding = 1 },
+          {
+            section = "keys",
+            gap = 0, -- <-- removed blank line between rows
+            padding = 0,
+            items = {
+              { action = "<cmd>Telescope find_files<cr>", key = "f", desc = "Find File", icon = " " },
+              { action = "<cmd>ene <bar> startinsert<cr>", key = "n", desc = "New File", icon = " " },
+              { action = "<cmd>Telescope projects<cr>", key = "p", desc = "Projects", icon = " " },
+              { action = "<cmd>Telescope live_grep<cr>", key = "t", desc = "Find Text", icon = " " },
+              { action = "<cmd>Telescope oldfiles<cr>", key = "r", desc = "Recent Files", icon = " " },
+              { action = "<cmd>e ~/.config/nvim/init.lua<cr>", key = "c", desc = "Config", icon = " " },
+              {
+                action = "<cmd>lua require('persistence').load()<cr>",
+                key = "s",
+                desc = "Restore Session",
+                icon = " ",
+              },
+              { action = "<cmd>LazyExtras<cr>", key = "x", desc = "Lazy Extras", icon = " " },
+              { action = "<cmd>Lazy<cr>", key = "l", desc = "Lazy", icon = "󰒲 " },
+              { action = "<cmd>qa<cr>", key = "q", desc = "Quit", icon = " " },
+            },
+          },
+          { section = "startup", padding = 1 },
         },
-      },
-    },
+      })
+      return opts
+    end,
   },
 }
