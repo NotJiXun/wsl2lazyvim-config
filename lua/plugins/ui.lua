@@ -27,8 +27,9 @@ local sharp_logo = [[
 -- Transparency flag
 vim.g.transparency_enabled = false
 
--- Theme list (order: 1=kanagawa, 2=nord, 3=catppuccin, 4=tokyonight, 5=rose-pine)
-local themes = { "kanagawa", "nord", "catppuccin", "tokyonight", "rose-pine" }
+-- Theme list
+-- 1=nord, 2=catppuccin, 3=tokyonight, 4=rose-pine, 5=onedark, 6=gruvbox
+local themes = { "nord", "catppuccin", "tokyonight", "rose-pine", "onedark", "gruvbox" }
 
 -- State file path
 local state_file = vim.fn.stdpath("data") .. "/theme_state"
@@ -43,7 +44,7 @@ local function load_theme_index()
       return idx
     end
   end
-  return 3 -- default to catppuccin
+  return 2 -- default to catppuccin
 end
 
 -- Save current index
@@ -57,38 +58,23 @@ end
 
 local current_theme_index = load_theme_index()
 
+-- Strips italic from every single highlight group, no exceptions.
+-- Runs after colorscheme + treesitter + LSP tokens have all applied.
+local function strip_all_italics()
+  for _, group in ipairs(vim.fn.getcompletion("", "highlight")) do
+    local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = group, link = false })
+    if ok and hl and hl.italic then
+      hl.italic = nil
+      pcall(vim.api.nvim_set_hl, 0, group, hl)
+    end
+  end
+end
+
 -- Apply theme function
 local function apply_theme()
   local theme = themes[current_theme_index]
 
-  if theme == "kanagawa" then
-    require("kanagawa").setup({
-      compile = true,
-      transparent = vim.g.transparency_enabled,
-      theme = "wave",
-      overrides = function(colors)
-        local t = colors.theme
-        return {
-          NormalFloat = { bg = "none" },
-          FloatBorder = { bg = "none", fg = t.ui.float_border },
-          FloatTitle = { bg = "none" },
-          NoiceCmdlinePopup = { bg = "none" },
-          NoiceCmdlinePopupBorder = { bg = "none" },
-          Pmenu = { fg = t.ui.shade0, bg = "none" },
-          PmenuSel = { fg = "none", bg = t.ui.bg_p2 },
-          TelescopeTitle = { fg = t.ui.special, bold = true },
-          TelescopePromptNormal = { bg = "none" },
-          TelescopePromptBorder = { fg = t.ui.float_border, bg = "none" },
-          TelescopeResultsNormal = { fg = t.ui.fg_dim, bg = "none" },
-          TelescopeResultsBorder = { fg = t.ui.float_border, bg = "none" },
-          TelescopePreviewNormal = { bg = "none" },
-          TelescopePreviewBorder = { fg = t.ui.float_border, bg = "none" },
-          NeoTreeNormal = { bg = "none" },
-          NeoTreeNormalNC = { bg = "none" },
-        }
-      end,
-    })
-  elseif theme == "nord" then
+  if theme == "nord" then
     vim.g.nord_contrast = true
     vim.g.nord_borders = false
     vim.g.nord_disable_background = vim.g.transparency_enabled
@@ -120,15 +106,38 @@ local function apply_theme()
       dark_variant = "moon",
       disable_background = vim.g.transparency_enabled,
     })
+  elseif theme == "onedark" then
+    require("onedarkpro").setup({
+      styles = {
+        types = "NONE",
+        methods = "NONE",
+        numbers = "NONE",
+        strings = "NONE",
+        comments = "NONE",
+        keywords = "NONE",
+        constants = "NONE",
+        functions = "NONE",
+        operators = "NONE",
+        variables = "NONE",
+        parameters = "NONE",
+        conditionals = "NONE",
+        virtual_text = "NONE",
+      },
+      options = {
+        transparency = vim.g.transparency_enabled,
+      },
+    })
+  elseif theme == "gruvbox" then
+    require("gruvbox").setup({
+      transparent_mode = vim.g.transparency_enabled,
+    })
   end
 
   -- Apply colorscheme
   vim.cmd("colorscheme " .. theme)
 
-  -- Post-setup
-  if theme == "kanagawa" then
-    vim.cmd("KanagawaCompile")
-  end
+  -- Strip all italics after everything (colorscheme, treesitter, LSP) has settled
+  vim.defer_fn(strip_all_italics, 50)
 
   if vim.g.transparency_enabled then
     vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
@@ -158,21 +167,14 @@ vim.api.nvim_create_autocmd("VimEnter", {
 })
 
 return {
-  -- 1. KANAGAWA
-  {
-    "rebelot/kanagawa.nvim",
-    lazy = false,
-    priority = 1000,
-    config = function() end,
-  },
-  -- 2. NORD
+  -- 1. NORD
   {
     "shaunsingh/nord.nvim",
     lazy = false,
     priority = 1000,
     config = function() end,
   },
-  -- 3. CATPPUCCIN
+  -- 2. CATPPUCCIN
   {
     "catppuccin/nvim",
     name = "catppuccin",
@@ -180,14 +182,14 @@ return {
     priority = 1000,
     config = function() end,
   },
-  -- 4. TOKYONIGHT
+  -- 3. TOKYONIGHT
   {
     "folke/tokyonight.nvim",
     lazy = false,
     priority = 1000,
     config = function() end,
   },
-  -- 5. ROSE-PINE
+  -- 4. ROSE-PINE
   {
     "rose-pine/neovim",
     name = "rose-pine",
@@ -195,102 +197,71 @@ return {
     priority = 1000,
     config = function() end,
   },
-  -- 6. NOICE
+  -- 5. ONE DARK PRO
+  {
+    "olimorris/onedarkpro.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function() end,
+  },
+  -- 6. GRUVBOX
+  {
+    "ellisonleao/gruvbox.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function() end,
+  },
+  -- 7. NOICE
   {
     "folke/noice.nvim",
     opts = function(_, opts)
-      opts.views = opts.views or {}
-      opts.views.cmdline_popup = {
-        border = { style = "rounded", padding = { 0, 1 } },
-      }
-      opts.views.popup = {}
-      opts.presets = opts.presets or {}
-      opts.presets.command_palette = true
-      opts.presets.long_message_to_split = true
-      return opts
+  opts.views = opts.views or {}
+  opts.views.cmdline_popup = {
+    border = { style = "rounded", padding = { 0, 1 } },
+  }
+  opts.views.popup = {}
+  opts.presets = opts.presets or {}
+  opts.presets.command_palette = true
+  opts.presets.long_message_to_split = true
+  return opts
     end,
   },
-  -- 7. DASHBOARD – Compact keys (gap=0)
+  -- 8. DASHBOARD – Compact keys (gap=0)
   {
     "folke/snacks.nvim",
     priority = 1000,
     opts = function(_, opts)
-      opts.dashboard = vim.tbl_deep_extend("force", opts.dashboard or {}, {
-        enabled = true,
-        preset = { header = sharp_logo },
-        sections = {
-          { section = "header", padding = 1 },
+  opts.dashboard = vim.tbl_deep_extend("force", opts.dashboard or {}, {
+    enabled = true,
+    preset = { header = sharp_logo },
+    sections = {
+      { section = "header", padding = 1 },
+      {
+        section = "keys",
+        gap = 0,
+        padding = 0,
+        items = {
+          { action = "<cmd>Telescope find_files<cr>", key = "f", desc = "Find File", icon = " " },
+          { action = "<cmd>ene <bar> startinsert<cr>", key = "n", desc = "New File", icon = " " },
+          { action = "<cmd>Telescope projects<cr>", key = "p", desc = "Projects", icon = " " },
+          { action = "<cmd>Telescope live_grep<cr>", key = "t", desc = "Find Text", icon = " " },
+          { action = "<cmd>Telescope oldfiles<cr>", key = "r", desc = "Recent Files", icon = " " },
+          { action = "<cmd>e ~/.config/nvim/init.lua<cr>", key = "c", desc = "Config", icon = " " },
+          { action = "<cmd>lua require('persistence').load()<cr>", key = "s", desc = "Restore Session", icon = " " },
+          { action = "<cmd>LazyExtras<cr>", key = "x", desc = "Lazy Extras", icon = " " },
           {
-            section = "keys",
-            gap = 0,
-            padding = 0,
-            items = {
-              {
-                action = "<cmd>Telescope find_files<cr>",
-                key = "f",
-                desc = "Find File",
-                icon = " ",
-              },
-              {
-                action = "<cmd>ene <bar> startinsert<cr>",
-                key = "n",
-                desc = "New File",
-                icon = " ",
-              },
-              {
-                action = "<cmd>Telescope projects<cr>",
-                key = "p",
-                desc = "Projects",
-                icon = " ",
-              },
-              {
-                action = "<cmd>Telescope live_grep<cr>",
-                key = "t",
-                desc = "Find Text",
-                icon = " ",
-              },
-              {
-                action = "<cmd>Telescope oldfiles<cr>",
-                key = "r",
-                desc = "Recent Files",
-                icon = " ",
-              },
-              {
-                action = "<cmd>e ~/.config/nvim/init.lua<cr>",
-                key = "c",
-                desc = "Config",
-                icon = " ",
-              },
-              {
-                action = "<cmd>lua require('persistence').load()<cr>",
-                key = "s",
-                desc = "Restore Session",
-                icon = " ",
-              },
-              {
-                action = "<cmd>LazyExtras<cr>",
-                key = "x",
-                desc = "Lazy Extras",
-                icon = " ",
-              },
-              {
-                action = "<cmd>Lazy<cr>",
-                key = "l",
-                desc = "Lazy",
-                icon = "󰒲 ",
-              },
-              {
-                action = "<cmd>qa<cr>",
-                key = "q",
-                desc = "Quit",
-                icon = " ",
-              },
-            },
+            action = "<cmd>Lazy<cr>",
+            key = "l",
+            desc = "Lazy",
+            icon = "󰒲 ",
           },
-          { section = "startup", padding = 1 },
+          { action = "<cmd>qa<cr>", key = "q", desc = "Quit", icon = " " },
         },
-      })
-      return opts
+      },
+      { section = "startup", padding = 1 },
+    },
+  })
+  return opts
     end,
   },
 }
